@@ -1,0 +1,8 @@
+FIRST AND FOREMOST
+
+1. Load in single image and get flatted color histogram data
+  Normalize values or ratio with size
+2. Find a way to iterate through folders/check relation (aka are two images in the same folder) for every pair
+  Check that they are in the same family folder
+3. Saving color data of a pair along with kinship label to a 3 column csv
+  
