@@ -16,6 +16,9 @@ from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
+train_labels_fpath = 'recognizing-faces-in-the-wild/train_relationships.csv'
+df_trlabels = pd.read_csv(train_labels_fpath)
+
 def testFiles(file_name, svm):
     #the pairs of files to be tested
     df_jpgpairs = pd.read_csv(
@@ -26,7 +29,7 @@ def testFiles(file_name, svm):
         "recognizing-faces-in-the-wild/test-private-labels/test-private-labels/{}.csv".format(file_name))
 
     #directory with all of our test faces
-    testdir = "recognizing-faces-in-the-wild/test-private-lists/test-private-lists/"
+    testDir = "recognizing-faces-in-the-wild/test-private-lists/test-private-lists/"
 
     testHistograms = np.array([])
     testLabels=df_labels['label'].to_numpy()
@@ -46,16 +49,34 @@ def testFiles(file_name, svm):
     print("Accuracy for {}:".format(file_name), np.mean(testLabels==Z))
 
 
-#returns the family number from a filepath
+#returns the family folder from a filepath
 def returnFamilyNum(string):
-    x = re.split("F", string)
-    secondx=x[1]
-    return secondx[0:4]
+    return (string[len(string)-27:len(string)-22] +
+          "/" + string[len(string)-21:len(string)-17])
+    # secondx=x[1]
+    # return secondx[0:10]
 
 
 def returnImageName(string):
     return string[(len(string)-9):len(string)]
 
+def checkIfPairExists(image1, image2):
+    global df_trlabels
+    # print(type(image1))
+    # print(type(df_trlabels['p1'].to_list()))
+    p1_list = df_trlabels['p1'].to_list()
+    p2_list = df_trlabels['p2'].to_list()
+    for x in range(len(p1_list)):
+        print(image2,image1)
+        if image1==str(p1_list[x]):
+            if image2==str(p2_list[x]):
+                print(image1,image2,"true")
+                return True
+
+
+    return False
+
+checkIfPairExists("F0002/MID1", "F0002/MID3") #test call
 
 def appendHistograms(fPOne, fPTwo):
     #read images
@@ -82,9 +103,15 @@ for subdir, dirs, files in os.walk(rootdir):
 # iterate through the list of filenames
 histograms, labels = np.array([]), np.array([])
 for fPOne in files_in_dir[:20]:
+    img1 = str(returnFamilyNum(fPOne))
     for fPTwo in files_in_dir[:20]:
         hist = appendHistograms(fPOne, fPTwo)
-        label = 1 if returnFamilyNum(fPOne) == returnFamilyNum(fPTwo) else 0
+        img2=str(returnFamilyNum(fPTwo))
+
+        # print(img1,img2)
+        returnFamilyNum(fPOne)
+        # print(checkIfPairExists(img1, img2))
+        label = 1 if checkIfPairExists(img1,img2) else 0
         if histograms.size != 0:
             histograms = np.vstack((histograms, hist))
         else:
@@ -96,14 +123,17 @@ for fPOne in files_in_dir[:20]:
 
 svmLinear = sklearn.svm.SVC(kernel='linear', C=0.01)
 svmLinear.fit(histograms, labels) #Where X is an array of color arrays
+print(labels[:20])
+Z = svmLinear.predict(histograms)
+print(Z[:20])
 
 #Printing to a csv
 with open('pairs.csv', mode='w+', newline='') as f:
     writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['img_pair','is_related'])
     count=0
-    for i, fPOne in enumerate(files_in_dir[:20]):
-        for j, fPTwo in enumerate(files_in_dir[:20]):
+    for i, fPOne in enumerate(files_in_dir[:50]):
+        for j, fPTwo in enumerate(files_in_dir[:50]):
             jpg_pair=returnImageName(fPOne)+"-"+returnImageName(fPTwo)
             writer.writerow(
                 [jpg_pair, Z[count]])
