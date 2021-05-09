@@ -51,6 +51,8 @@ def testFiles(file_name, svm):
 
 #returns the family folder from a filepath
 def returnFamilyNum(string):
+    # print (string[len(string)-27:len(string)-22] +
+    #       "/" + string[len(string)-21:len(string)-17])
     return (string[len(string)-27:len(string)-22] +
           "/" + string[len(string)-21:len(string)-17])
     # secondx=x[1]
@@ -67,16 +69,17 @@ def checkIfPairExists(image1, image2):
     p1_list = df_trlabels['p1'].to_list()
     p2_list = df_trlabels['p2'].to_list()
     for x in range(len(p1_list)):
-        print(image2,image1)
+        # print(image2,image1)
         if image1==str(p1_list[x]):
             if image2==str(p2_list[x]):
                 print(image1,image2,"true")
                 return True
 
-
+    print(image1,image2,"false")
     return False
 
 checkIfPairExists("F0002/MID1", "F0002/MID3") #test call
+checkIfPairExists("F0001/MID1", "F0001/MID1") #test call
 
 def appendHistograms(fPOne, fPTwo):
     #read images
@@ -100,17 +103,22 @@ for subdir, dirs, files in os.walk(rootdir):
         #print (os.path.join(subdir, file))
         files_in_dir.append(os.path.join(subdir, file))
 
+
+img1=""
+img2=""
 # iterate through the list of filenames
 histograms, labels = np.array([]), np.array([])
 for fPOne in files_in_dir[:20]:
-    img1 = str(returnFamilyNum(fPOne))
+    img1 = (returnFamilyNum(fPOne))
     for fPTwo in files_in_dir[:20]:
         hist = appendHistograms(fPOne, fPTwo)
-        img2=str(returnFamilyNum(fPTwo))
 
-        # print(img1,img2)
-        returnFamilyNum(fPOne)
-        # print(checkIfPairExists(img1, img2))
+        img2= (returnFamilyNum(fPTwo))
+
+        # print(fPOne,fPTwo)
+        print(img1,img2)
+        # returnFamilyNum(fPOne)
+        print(checkIfPairExists(img1, img2))
         label = 1 if checkIfPairExists(img1,img2) else 0
         if histograms.size != 0:
             histograms = np.vstack((histograms, hist))
