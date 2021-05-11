@@ -26,24 +26,25 @@ def getLabels():
                 fileOne = df.iloc[i]['p1']
                 fileTwo = df.iloc[i]['p2']
                 uniqueLabels.add(fileOne+fileTwo)
+                uniqueLabels.add(fileTwo+fileOne)
     return uniqueLabels
 
 
 def testFiles(file_name, svm):
     #the pairs of files to be tested
     df_jpgpairs = pd.read_csv(
-        "recognizing-faces-in-the-wild/test-private-lists/test-private-lists/{}.csv".format(file_name))
+        "test-private-lists//test-private-lists/{}".format(file_name))
 
     #the labels for those pairs
     df_labels = pd.read_csv(
-        "recognizing-faces-in-the-wild/test-private-labels/test-private-labels/{}.csv".format(file_name))
+        "test-private-labels//test-private-labels/{}".format(file_name))
 
     #directory with all of our test faces
-    testdir = "recognizing-faces-in-the-wild/test-private-lists/test-private-lists/"
+    testDir = "test-private-faces//test-private-faces/"
 
     testHistograms = np.array([])
     testLabels=df_labels['label'].to_numpy()
-    for x in range(len(df_jpgpairs)):
+    for x in range(len(df_jpgpairs)//100):
         #get paths for two files
         fpOne = testDir+df_jpgpairs.iloc[x]['p1']
         fpTwo = testDir+df_jpgpairs.iloc[x]['p2']
@@ -86,7 +87,7 @@ def appendHistograms(fPOne, fPTwo):
 rootdir = 'train'
 
 uniqueLabels = getLabels()
-
+# print(uniqueLabels)
 #gets files from all directories
 files_in_dir = []
 for subdir, dirs, files in os.walk(rootdir):
@@ -95,12 +96,14 @@ for subdir, dirs, files in os.walk(rootdir):
 
 # iterate through the list of filenames
 histograms, labels = np.array([]), np.array([])
-for fPOne in files_in_dir[:20]:
-    for fPTwo in files_in_dir[:20]:
+for fPOne in files_in_dir:
+    for fPTwo in files_in_dir:
         hist = appendHistograms(fPOne, fPTwo)
-        label = 1 if returnFamilyMember(fPOne) + returnFamilyMember(fPTwo) in uniqueLabels else 0
-        if label:
-            print(returnFamilyMember(fPOne) + returnFamilyMember(fPTwo))
+        if returnFamilyMember(fPOne) + returnFamilyMember(fPTwo) in uniqueLabels or returnFamilyMember(fPOne) == returnFamilyMember(fPTwo):
+            #does it account for opposite order?
+            label = 1
+        else: 
+            label = 0
         if histograms.size != 0:
             histograms = np.vstack((histograms, hist))
         else:
@@ -112,27 +115,35 @@ for fPOne in files_in_dir[:20]:
 
 svmLinear = sklearn.svm.SVC(kernel='linear', C=0.01)
 svmLinear.fit(histograms, labels) #Where X is an array of color arrays
+# print(labels)
+'''
 Z = svmLinear.predict(histograms)
+print(labels)
+print(Z)
 print("Accuracy:", np.mean(labels==Z))
 
-# #Printing to a csv
-# with open('pairs.csv', mode='w+', newline='') as f:
-#     writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#     writer.writerow(['img_pair','is_related'])
-#     count=0
-#     for fPOne in files_in_dir[:20]:
-#         for fPTwo in files_in_dir[:20]:
-#             jpg_pair=returnImageName(fPOne)+"-"+returnImageName(fPTwo)
-#             writer.writerow([jpg_pair, Z[count]])
-#             count=count+1
-# f.close()
+#Printing to a csv
+with open('pairs.csv', mode='w+', newline='') as f:
+    writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['img_pair','is_related'])
+    count=0
+    for fPOne in files_in_dir[:20]:
+        for fPTwo in files_in_dir[:20]:
+            jpg_pair=returnImageName(fPOne)+"-"+returnImageName(fPTwo)
+            writer.writerow([jpg_pair, Z[count]])
+            count=count+1
+f.close()
+'''
+# iterate through test-private files
+#testdir = "test-private-lists//test-private-lists/"
 
-# # iterate through test-private files
-# testdir = "recognizing-faces-in-the-wild/test-private-lists/test-private-lists/"
 
-# for subdir, dirs, files in os.walk(testdir):
-#     for f in files:
-#         testFiles(f.split('.')[0], svmLinear)
+#testdir = "test-private-lists/test-private-lists/"
+#for subdir, dirs, files in os.walk(testdir):
+#    for f in files:
+ #       if f.split('.')[-1] == "csv":
+ #           print(f)
+ #           testFiles(f, svmLinear)
 
 # #fileTest = files_in_dir[1]
 # #image = skimage.io.imread(fileTest, as_gray=True)
@@ -152,3 +163,54 @@ print("Accuracy:", np.mean(labels==Z))
 
 # #plt.plot(bin_edges[0:-1], histogram)  # <- or here
 # #plt.show()
+
+
+
+
+
+
+
+
+
+#the pairs of files to be tested
+df_jpgpairs = pd.read_csv(
+    "test-private-lists/test-private-lists/ss.csv")
+
+#the labels for those pairs
+df_labels = pd.read_csv(
+    "test-private-labels/test-private-labels/ss.csv")
+
+#get labels in an array, same format as our prediction output
+testLabels = df_labels['label'].to_numpy()
+# testLabels = testLabels[]
+
+# print(type(testLabels))
+
+#directory with all of our test faces
+testDir = "test-private-faces/test-private-faces/"
+
+testHistograms = np.array([])
+
+#for x in range(len(df_jpgpairs)):
+for x in range(len(df_jpgpairs)):
+    #get paths for two files
+    fpOne = testDir+df_jpgpairs.iloc[x]['p1']
+    fpTwo = testDir+df_jpgpairs.iloc[x]['p2']
+
+    #return appended histogram for combination of images
+    colorData = appendHistograms(fpOne, fpTwo)
+
+    testHistograms = np.vstack(
+        (testHistograms, colorData)) if testHistograms.size != 0 else np.array(colorData)
+
+
+Z = svmLinear.predict(testHistograms)
+# print(Z, testLabels)
+# print(Z[:500])
+# print(testLabels[:100])
+# print(testLabels.shape)
+# print(Z.shape)
+# print(testLabels[:5])
+# print(Z[:5])
+print("Accuracy:", np.mean(testLabels == Z))
+
